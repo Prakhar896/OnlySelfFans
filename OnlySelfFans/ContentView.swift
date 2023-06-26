@@ -18,17 +18,64 @@ enum NotificationCategory: String {
 
 struct ContentView: View {
     @State var showWelcomeScreen = false
+    @State var loadedNotification = Notification.loadCurrentNotification()
+    
+    var notificationStoredCurrently: Bool {
+        return loadedNotification != nil
+    }
+    
+    var currentNotificationTriggerDatetimeStringFormatted: String? {
+        if let loadedNotification = loadedNotification {
+            if let triggerDatetime = loadedNotification.triggerDatetime {
+                return triggerDatetime.formatted()
+            }
+        }
+        
+        return nil
+    }
     
     var body: some View {
         NavigationView {
             List {
-                Text("test")
+                if notificationStoredCurrently {
+                    Section {
+                        Text("Title: \(loadedNotification?.title ?? "Load Error")")
+                        Text("Body:\n\n\(loadedNotification?.body ?? "Load Error")")
+                            .frame(minHeight: 50)
+                        
+                        if loadedNotification!.timeIntervalBased {
+                            Text("Time Interval: \(Int(loadedNotification?.triggerIntervalDuration ?? 0)) seconds")
+                        } else {
+                            Text("Trigger Datetime: \(currentNotificationTriggerDatetimeStringFormatted ?? "Load Error")")
+                        }
+                    } header: {
+                        Text("Current Notification")
+                    }
+                } else {
+                    Section {
+                        Text("No notification currently active.")
+                            .bold()
+                            .padding(10)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .multilineTextAlignment(.center)
+                    }
+                }
             }
             .navigationTitle("OnlySelfFans")
             .toolbar {
                 ToolbarItemGroup(placement: .navigationBarTrailing) {
-                    Button("Schedule Notification") {
-                        setNotification()
+                    Button {
+                        AppManager.addNotification(withNotificationModel: Notification(
+                            id: "identifier",
+                            title: "stop texting",
+                            body: "pls stop using ig for ur own sake",
+                            triggerIntervalDuration: 5,
+                            repeats: false
+                        ))
+                        print("scheduled notification!")
+                        loadedNotification = Notification.loadCurrentNotification()
+                    } label: {
+                        Text("Schedule")
                     }
                 }
             }
@@ -39,38 +86,6 @@ struct ContentView: View {
             }
             .sheet(isPresented: $showWelcomeScreen) {
                 WelcomeView()
-            }
-        }
-    }
-    
-    func setNotification() {
-        let center = UNUserNotificationCenter.current()
-        
-        // create content
-        let content = UNMutableNotificationContent()
-        content.title = "STOP TEXTING NUPUR"
-        content.body = "STOP TEXTING WHOEVER YOUVE BEEN TEXTING FOR THE PAST 2 HOURS"
-        content.categoryIdentifier = NotificationCategory.general.rawValue
-        
-        // create trigger
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)
-        
-        // create a request
-        let request = UNNotificationRequest(identifier: "identifier", content: content, trigger: trigger)
-        
-        // action
-        let dismiss = UNNotificationAction(identifier: NotificationAction.dismiss.rawValue, title: "Dismiss", options: [])
-        
-        let reminder = UNNotificationAction(identifier: NotificationAction.reminder.rawValue, title: "Reminder", options: [])
-        
-        let generalCategory = UNNotificationCategory(identifier: NotificationCategory.general.rawValue, actions: [dismiss, reminder], intentIdentifiers: [], options: [])
-        
-        center.setNotificationCategories([generalCategory])
-        
-        // add
-        center.add(request) { error in
-            if let error = error {
-                print(error.localizedDescription)
             }
         }
     }
