@@ -8,7 +8,30 @@
 import Foundation
 import UserNotifications
 
-struct AppManager {
+class AppManager {
+    @Published var loadedNotification: Notification?
+    
+    init() {
+        loadedNotification = Notification.loadCurrentNotification()
+        
+        // expire notif from persistence
+        var expire = false
+        if let loadedNotification = loadedNotification {
+            if !loadedNotification.timeIntervalBased {
+                if let triggerDatetime = loadedNotification.triggerDatetime {
+                    if triggerDatetime < Date.now {
+                        expire = true
+                    }
+                }
+            }
+        }
+        
+        if expire {
+            Notification.removeCurrentNotificationKey()
+            loadedNotification = nil
+        }
+    }
+    
     static func checkIfFirstLaunch() -> Bool {
         if UserDefaults.standard.bool(forKey: "LaunchedBefore") == true {
             return false
@@ -113,5 +136,9 @@ struct Notification: Codable {
         }
         
         return nil
+    }
+    
+    static func removeCurrentNotificationKey() {
+        UserDefaults.standard.removeObject(forKey: "CurrentNotification")
     }
 }
