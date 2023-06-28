@@ -70,7 +70,7 @@ class AppManager: ObservableObject {
         let content = UNMutableNotificationContent()
         content.title = notification.title
         content.body = notification.body
-//        content.categoryIdentifier = NotificationCategory.general.rawValue // for notification action categories
+        //        content.categoryIdentifier = NotificationCategory.general.rawValue // for notification action categories
         
         // create trigger
         var intervalBasedTrigger: UNTimeIntervalNotificationTrigger? = nil
@@ -87,13 +87,13 @@ class AppManager: ObservableObject {
         let request = UNNotificationRequest(identifier: notification.id, content: content, trigger: notification.timeIntervalBased ? intervalBasedTrigger: dateBasedTrigger)
         
         // actions
-//        let dismiss = UNNotificationAction(identifier: NotificationAction.dismiss.rawValue, title: "Dismiss", options: [])
-//
-//        let reminder = UNNotificationAction(identifier: NotificationAction.reminder.rawValue, title: "Reminder", options: [])
-//
-//        let generalCategory = UNNotificationCategory(identifier: NotificationCategory.general.rawValue, actions: [dismiss, reminder], intentIdentifiers: [], options: [])
-//
-//        center.setNotificationCategories([generalCategory])
+        //        let dismiss = UNNotificationAction(identifier: NotificationAction.dismiss.rawValue, title: "Dismiss", options: [])
+        //
+        //        let reminder = UNNotificationAction(identifier: NotificationAction.reminder.rawValue, title: "Reminder", options: [])
+        //
+        //        let generalCategory = UNNotificationCategory(identifier: NotificationCategory.general.rawValue, actions: [dismiss, reminder], intentIdentifiers: [], options: [])
+        //
+        //        center.setNotificationCategories([generalCategory])
         
         // add
         center.add(request) { error in
@@ -159,5 +159,30 @@ struct Notification: Codable {
     
     static func removeCurrentNotificationKey() {
         UserDefaults.standard.removeObject(forKey: "CurrentNotification")
+    }
+    
+    static func saveToFile(notifications: [Notification]) {
+        let plistName = "notifications"
+        
+        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let archiveURL = documentsDirectory.appendingPathComponent(plistName).appendingPathExtension("plist")
+        
+        let propertyListEncoder = PropertyListEncoder()
+        let encodedNotifs = try? propertyListEncoder.encode(notifications)
+        
+        try? encodedNotifs?.write(to: archiveURL, options: .noFileProtection)
+    }
+    
+    static func loadFromFile() -> [Notification]? {
+        let plistName = "notifications"
+        
+        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let archiveURL = documentsDirectory.appendingPathComponent(plistName).appendingPathExtension("plist")
+        
+        let propertyListDecoder = PropertyListDecoder()
+        
+        guard let retrievedNotifsData = try? Data(contentsOf: archiveURL) else { return nil }
+        guard let decodedNotifs = try? propertyListDecoder.decode(Array<Notification>.self, from: retrievedNotifsData) else { return nil }
+        return decodedNotifs
     }
 }
