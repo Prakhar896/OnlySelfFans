@@ -10,8 +10,11 @@ import SwiftUI
 @main
 struct OnlySelfFansApp: App {
     
+    private var delegate: UserNotificationDelegate = UserNotificationDelegate()
+    
     init() {
         let center = UNUserNotificationCenter.current()
+        center.delegate = delegate
         center.requestAuthorization(options: [.alert, .sound, .badge]) { result, error in
             if let error = error {
                 print(error.localizedDescription)

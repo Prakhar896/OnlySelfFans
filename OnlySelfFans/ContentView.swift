@@ -17,11 +17,16 @@ enum NotificationCategory: String {
 }
 
 struct ContentView: View {
-    @State var showWelcomeScreen = false
-    @State var loadedNotification = Notification.loadCurrentNotification()
+    @StateObject var appManager: AppManager = AppManager()
     
+    @State var showWelcomeScreen = false
+    @State var showingNewNotificationScreen = false
+    
+    var loadedNotification: Notification? {
+        appManager.loadedNotification
+    }
     var notificationStoredCurrently: Bool {
-        return loadedNotification != nil
+        loadedNotification != nil
     }
     
     var currentNotificationTriggerDatetimeStringFormatted: String? {
@@ -49,7 +54,15 @@ struct ContentView: View {
                             Text("Trigger Datetime: \(currentNotificationTriggerDatetimeStringFormatted ?? "Load Error")")
                         }
                     } header: {
-                        Text("Current Notification")
+                        HStack {
+                            Text("Current Notification")
+                            Spacer()
+                            Button {
+                                appManager.refresh()
+                            } label: {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                            }
+                        }
                     }
                 } else {
                     Section {
@@ -65,27 +78,33 @@ struct ContentView: View {
             .toolbar {
                 ToolbarItemGroup(placement: .navigationBarTrailing) {
                     Button {
-                        AppManager.addNotification(withNotificationModel: Notification(
-                            id: "identifier",
-                            title: "stop texting",
-                            body: "pls stop using ig for ur own sake",
-                            triggerIntervalDuration: 5,
-                            repeats: false
-                        ))
-                        print("scheduled notification!")
-                        loadedNotification = Notification.loadCurrentNotification()
+//                        AppManager.addNotification(withNotificationModel: Notification(
+//                            id: "identifier",
+//                            title: "stop texting",
+//                            body: "pls stop using ig for ur own sake",
+//                            triggerIntervalDuration: 5,
+//                            repeats: false
+//                        ))
+//                        print("scheduled notification!")
+//                        appManager.loadedNotification = Notification.loadCurrentNotification()
+                        
+                        showingNewNotificationScreen = true
                     } label: {
                         Text("Schedule")
                     }
                 }
             }
             .onAppear {
+                appManager.refresh()
                 if AppManager.checkIfFirstLaunch() {
                     showWelcomeScreen.toggle()
                 }
             }
             .sheet(isPresented: $showWelcomeScreen) {
                 WelcomeView()
+            }
+            .sheet(isPresented: $showingNewNotificationScreen) {
+                NewNotificationView(appManager: appManager)
             }
         }
     }

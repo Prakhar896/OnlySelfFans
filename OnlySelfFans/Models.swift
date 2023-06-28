@@ -8,10 +8,29 @@
 import Foundation
 import UserNotifications
 
-class AppManager {
+class UserNotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+        let identifier = response.notification.request.identifier
+        print("Notification with ID '\(identifier)' was received.")
+        
+        Notification.removeCurrentNotificationKey()
+        
+        completionHandler()
+    }
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.badge, .sound, .banner])
+    }
+}
+
+class AppManager: ObservableObject {
     @Published var loadedNotification: Notification?
     
     init() {
+        refresh()
+    }
+    
+    func refresh() {
         loadedNotification = Notification.loadCurrentNotification()
         
         // expire notif from persistence
