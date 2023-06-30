@@ -7,21 +7,12 @@
 
 import SwiftUI
 
-enum NotificationAction: String {
-    case dismiss
-    case reminder
-}
-
-enum NotificationCategory: String {
-    case general
-}
-
 struct ContentViewListSectionHeader: View {
     @ObservedObject var appManager: AppManager
     
     var body: some View {
         HStack {
-            Text("Current Notifications")
+            Text("All Notifications")
             Spacer()
             Button {
                 appManager.refresh()
@@ -51,14 +42,20 @@ struct ContentView: View {
                 if notificationStoredCurrently {
                     Section {
                         ForEach(loadedNotifications ?? [], id: \.id) { notif in
-                            Text(notif.title)
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text(notif.title)
+                                    .bold()
+                                Text(notif.description)
+                                    .font(.caption)
+                            }
+                            .padding(5)
                         }
                     } header: {
                         ContentViewListSectionHeader(appManager: appManager)
                     }
                 } else {
                     Section {
-                        Text("No notifications currently active.")
+                        Text("No notifications created.")
                             .bold()
                             .padding(10)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -70,11 +67,19 @@ struct ContentView: View {
             }
             .navigationTitle("OnlySelfFans")
             .toolbar {
+                ToolbarItemGroup(placement: .navigationBarLeading) {
+                    Button {
+                        appManager.hardReset()
+                    } label: {
+                        Text("Reset")
+                    }
+                }
+                
                 ToolbarItemGroup(placement: .navigationBarTrailing) {
                     Button {
                         showingNewNotificationScreen = true
                     } label: {
-                        Text("Schedule")
+                        Text("New")
                     }
                 }
             }
@@ -107,3 +112,13 @@ struct ContentView_Previews: PreviewProvider {
         ContentView()
     }
 }
+
+// ***DEPRECATED***
+//enum NotificationAction: String {
+//    case dismiss
+//    case reminder
+//}
+//
+//enum NotificationCategory: String {
+//    case general
+//}

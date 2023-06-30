@@ -13,22 +13,21 @@ class UserNotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
         let identifier = response.notification.request.identifier
         print("Notification with ID '\(identifier)' was received.")
         
-        var loadedNotifs = Notification.loadFromFile() ?? []
-        loadedNotifs = loadedNotifs.filter { notif in
-            if notif.id == identifier {
-                if notif.timeIntervalBased { // notification has been sent and expired
-                    return false // exclude notif
-                } else if !notif.repeats {
-                        return false // notification with non-repeating interval sent and expired, hence exclude
-                } else {
-                    return true // notification has repeating interval, sent; include
-                }
-            } else {
-                return true // notification is not the one just sent
-            }
-        }
-        
-        Notification.saveToFile(notifications: loadedNotifs)
+        // ***DEPRECATED*** (Expiry strategy is ditched)
+//        var loadedNotifs = Notification.loadFromFile() ?? []
+//        loadedNotifs = loadedNotifs.filter { notif in
+//            if notif.id == identifier {
+//                if notif.timeIntervalBased { // notification has been sent and expired
+//                    return false // exclude notif
+//                } else if !notif.repeats {
+//                        return false // notification with non-repeating interval sent and expired, hence exclude
+//                } else {
+//                    return true // notification has repeating interval, sent; include
+//                }
+//            } else {
+//                return true // notification is not the one just sent
+//            }
+//        }
         
         completionHandler()
     }
@@ -47,20 +46,17 @@ class AppManager: ObservableObject {
     }
     
     func refresh(reloadFromFile: Bool = true) {
-        if reloadFromFile {
-            loadedNotifications = Notification.loadFromFile() ?? []
-        }
-        
-        // expire notif from persistence
-        for notificationIndex in 0..<loadedNotifications.count {
-            if !loadedNotifications[notificationIndex].timeIntervalBased {
-                if (loadedNotifications[notificationIndex].triggerDatetime ?? Date.now) < Date.now {
-                    loadedNotifications.remove(at: notificationIndex)
-                }
-            }
-        }
-        
-        Notification.saveToFile(notifications: loadedNotifications)
+        loadedNotifications = Notification.loadFromFile() ?? []
+    }
+    
+    func hardReset() {
+        UserDefaults.resetDefaults()
+        UserDefaults.standard.synchronize()
+        Notification.saveToFile(notifications: [])
+        loadedNotifications = []
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+        UNUserNotificationCenter.current().removeAllDeliveredNotifications()
+        exit(0)
     }
     
     static func checkIfFirstLaunch() -> Bool {
@@ -129,6 +125,18 @@ struct Notification: Codable {
     var triggerDatetime: Date?
     var triggerIntervalDuration: Double?
     var repeats: Bool
+    var created: Date
+    
+    var description: String {
+        var desc = ""
+        if !timeIntervalBased {
+            desc = ((triggerDatetime ?? Date.now) < Date.now ? "Triggers on ": "Sent on ") + (triggerDatetime?.formatted() ?? "UNAVAILABLE")
+        } else {
+            desc = (repeats ? "Repeats every ": "Once in ") + "\(Int(triggerIntervalDuration ?? 0.0)) seconds"
+        }
+        
+        return desc
+    }
     
     init(id: String, title: String, body: String, triggerIntervalDuration: Double? = nil, repeats: Bool) {
         self.id = id
@@ -137,6 +145,7 @@ struct Notification: Codable {
         self.triggerDatetime = nil
         self.triggerIntervalDuration = triggerIntervalDuration
         self.repeats = repeats
+        self.created = Date.now
     }
     
     init(id: String, title: String, body: String, triggerDatetime: Date? = nil) {
@@ -146,6 +155,7 @@ struct Notification: Codable {
         self.triggerDatetime = triggerDatetime
         self.triggerIntervalDuration = nil
         self.repeats = false
+        self.created = Date.now
     }
     
     var timeIntervalBased: Bool {
@@ -201,5 +211,14 @@ struct Notification: Codable {
         guard let retrievedNotifsData = try? Data(contentsOf: archiveURL) else { return nil }
         guard let decodedNotifs = try? propertyListDecoder.decode(Array<Notification>.self, from: retrievedNotifsData) else { return nil }
         return decodedNotifs
+    }
+}
+
+
+extension UserDefaults {
+    static func resetDefaults() {
+        if let bundleID = Bundle.main.bundleIdentifier {
+            UserDefaults.standard.removePersistentDomain(forName: bundleID)
+        }
     }
 }
