@@ -16,27 +16,33 @@ enum NotificationCategory: String {
     case general
 }
 
+struct ContentViewListSectionHeader: View {
+    @ObservedObject var appManager: AppManager
+    
+    var body: some View {
+        HStack {
+            Text("Current Notifications")
+            Spacer()
+            Button {
+                appManager.refresh()
+            } label: {
+                Image(systemName: "arrow.triangle.2.circlepath")
+            }
+        }
+    }
+}
+
 struct ContentView: View {
     @StateObject var appManager: AppManager = AppManager()
     
     @State var showWelcomeScreen = false
     @State var showingNewNotificationScreen = false
     
-    var loadedNotification: Notification? {
-        appManager.loadedNotification
+    var loadedNotifications: [Notification]? {
+        appManager.loadedNotifications
     }
     var notificationStoredCurrently: Bool {
-        loadedNotification != nil
-    }
-    
-    var currentNotificationTriggerDatetimeStringFormatted: String? {
-        if let loadedNotification = loadedNotification {
-            if let triggerDatetime = loadedNotification.triggerDatetime {
-                return triggerDatetime.formatted()
-            }
-        }
-        
-        return nil
+        loadedNotifications != nil && loadedNotifications?.count != 0
     }
     
     var body: some View {
@@ -44,33 +50,21 @@ struct ContentView: View {
             List {
                 if notificationStoredCurrently {
                     Section {
-                        Text("Title: \(loadedNotification?.title ?? "Load Error")")
-                        Text("Body:\n\n\(loadedNotification?.body ?? "Load Error")")
-                            .frame(minHeight: 50)
-                        
-                        if loadedNotification!.timeIntervalBased {
-                            Text("Time Interval: \(Int(loadedNotification?.triggerIntervalDuration ?? 0)) seconds")
-                        } else {
-                            Text("Trigger Datetime: \(currentNotificationTriggerDatetimeStringFormatted ?? "Load Error")")
+                        ForEach(loadedNotifications ?? [], id: \.id) { notif in
+                            Text(notif.title)
                         }
                     } header: {
-                        HStack {
-                            Text("Current Notification")
-                            Spacer()
-                            Button {
-                                appManager.refresh()
-                            } label: {
-                                Image(systemName: "arrow.triangle.2.circlepath")
-                            }
-                        }
+                        ContentViewListSectionHeader(appManager: appManager)
                     }
                 } else {
                     Section {
-                        Text("No notification currently active.")
+                        Text("No notifications currently active.")
                             .bold()
                             .padding(10)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .multilineTextAlignment(.center)
+                    } header: {
+                        ContentViewListSectionHeader(appManager: appManager)
                     }
                 }
             }
@@ -78,26 +72,10 @@ struct ContentView: View {
             .toolbar {
                 ToolbarItemGroup(placement: .navigationBarTrailing) {
                     Button {
-//                        AppManager.addNotification(withNotificationModel: Notification(
-//                            id: "identifier",
-//                            title: "stop texting",
-//                            body: "pls stop using ig for ur own sake",
-//                            triggerIntervalDuration: 5,
-//                            repeats: false
-//                        ))
-//                        print("scheduled notification!")
-//                        appManager.loadedNotification = Notification.loadCurrentNotification()
-                        
                         showingNewNotificationScreen = true
                     } label: {
                         Text("Schedule")
                     }
-                }
-            }
-            .onAppear {
-                appManager.refresh()
-                if AppManager.checkIfFirstLaunch() {
-                    showWelcomeScreen.toggle()
                 }
             }
             .sheet(isPresented: $showWelcomeScreen) {
@@ -107,6 +85,20 @@ struct ContentView: View {
                 NewNotificationView(appManager: appManager)
             }
         }
+        .onAppear {
+            appManager.refresh()
+            if AppManager.checkIfFirstLaunch() {
+                showWelcomeScreen.toggle()
+            }
+        }
+    }
+    
+    func makeFormattedDatetime(for notification: Notification) -> String? {
+        if let triggerDatetime = notification.triggerDatetime {
+                return triggerDatetime.formatted()
+        }
+        
+        return nil
     }
 }
 

@@ -13,7 +13,12 @@ class UserNotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
         let identifier = response.notification.request.identifier
         print("Notification with ID '\(identifier)' was received.")
         
-        Notification.removeCurrentNotificationKey()
+        var loadedNotifs = Notification.loadFromFile() ?? []
+        loadedNotifs = loadedNotifs.filter { notif in
+            return !(notif.id == identifier && notif.timeIntervalBased)
+        }
+        
+        Notification.saveToFile(notifications: loadedNotifs)
         
         completionHandler()
     }
@@ -24,31 +29,24 @@ class UserNotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
 }
 
 class AppManager: ObservableObject {
-    @Published var loadedNotification: Notification?
+    @Published var loadedNotifications: [Notification]
     
     init() {
+        loadedNotifications = Notification.loadFromFile() ?? []
         refresh()
     }
     
     func refresh() {
-        loadedNotification = Notification.loadCurrentNotification()
-        
         // expire notif from persistence
-        var expire = false
-        if let loadedNotification = loadedNotification {
-            if !loadedNotification.timeIntervalBased {
-                if let triggerDatetime = loadedNotification.triggerDatetime {
-                    if triggerDatetime < Date.now {
-                        expire = true
-                    }
+        for notificationIndex in 0..<loadedNotifications.count {
+            if !loadedNotifications[notificationIndex].timeIntervalBased {
+                if (loadedNotifications[notificationIndex].triggerDatetime ?? Date.now) < Date.now {
+                    loadedNotifications.remove(at: notificationIndex)
                 }
             }
         }
         
-        if expire {
-            Notification.removeCurrentNotificationKey()
-            loadedNotification = nil
-        }
+        Notification.saveToFile(notifications: loadedNotifications)
     }
     
     static func checkIfFirstLaunch() -> Bool {
@@ -103,7 +101,9 @@ class AppManager: ObservableObject {
         }
         
         // persist notification
-        Notification.save(notification: notification)
+        var loadedNotifs = Notification.loadFromFile() ?? []
+        loadedNotifs.insert(notification, at: 0)
+        Notification.saveToFile(notifications: loadedNotifs)
     }
 }
 
