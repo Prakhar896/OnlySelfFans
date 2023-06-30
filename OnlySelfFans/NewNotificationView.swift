@@ -135,6 +135,7 @@ struct NewNotificationView: View {
                     repeats: repeats
                 )
             )
+            appManager.refresh(reloadFromFile: true)
             dismiss()
         } else {
             // Add with datetime trigger
@@ -146,6 +147,7 @@ struct NewNotificationView: View {
                     triggerDatetime: triggerDatetime
                 )
             )
+            appManager.refresh(reloadFromFile: true)
             dismiss()
         }
     }

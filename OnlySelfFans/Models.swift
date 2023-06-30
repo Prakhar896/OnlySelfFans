@@ -15,7 +15,17 @@ class UserNotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
         
         var loadedNotifs = Notification.loadFromFile() ?? []
         loadedNotifs = loadedNotifs.filter { notif in
-            return !(notif.id == identifier && notif.timeIntervalBased)
+            if notif.id == identifier {
+                if notif.timeIntervalBased { // notification has been sent and expired
+                    return false // exclude notif
+                } else if !notif.repeats {
+                        return false // notification with non-repeating interval sent and expired, hence exclude
+                } else {
+                    return true // notification has repeating interval, sent; include
+                }
+            } else {
+                return true // notification is not the one just sent
+            }
         }
         
         Notification.saveToFile(notifications: loadedNotifs)
@@ -36,7 +46,11 @@ class AppManager: ObservableObject {
         refresh()
     }
     
-    func refresh() {
+    func refresh(reloadFromFile: Bool = true) {
+        if reloadFromFile {
+            loadedNotifications = Notification.loadFromFile() ?? []
+        }
+        
         // expire notif from persistence
         for notificationIndex in 0..<loadedNotifications.count {
             if !loadedNotifications[notificationIndex].timeIntervalBased {
@@ -84,6 +98,7 @@ class AppManager: ObservableObject {
         // create a request
         let request = UNNotificationRequest(identifier: notification.id, content: content, trigger: notification.timeIntervalBased ? intervalBasedTrigger: dateBasedTrigger)
         
+        // ***DEPRECATED***
         // actions
         //        let dismiss = UNNotificationAction(identifier: NotificationAction.dismiss.rawValue, title: "Dismiss", options: [])
         //
@@ -141,12 +156,14 @@ struct Notification: Codable {
         }
     }
     
+    // ***DEPRECATED***
     static func save(notification: Notification) {
         if let data = try? JSONEncoder().encode(notification) {
             UserDefaults.standard.set(data, forKey: "CurrentNotification")
         }
     }
     
+    // ***DEPRECATED***
     static func loadCurrentNotification() -> Notification? {
         if let data = UserDefaults.standard.data(forKey: "CurrentNotification") {
             if let decodedNotif = try? JSONDecoder().decode(Notification.self, from: data) {
