@@ -64,6 +64,8 @@ struct ContentView: View {
                         .onDelete(perform: removeNotifs)
                     } header: {
                         ContentViewListSectionHeader(appManager: appManager)
+                    } footer: {
+                        Text("Tip: Swipe left on a notification to delete it quickly.")
                     }
                 } else {
                     Section {

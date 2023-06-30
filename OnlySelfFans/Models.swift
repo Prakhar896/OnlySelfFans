@@ -130,7 +130,7 @@ struct Notification: Codable {
     var description: String {
         var desc = ""
         if !timeIntervalBased {
-            desc = ((triggerDatetime ?? Date.now) < Date.now ? "Triggers on ": "Sent on ") + (triggerDatetime?.formatted() ?? "UNAVAILABLE")
+            desc = ((triggerDatetime ?? Date.now) > Date.now ? "Triggers on ": "Sent on ") + (triggerDatetime?.formatted() ?? "UNAVAILABLE")
         } else {
             desc = (repeats ? "Repeats every ": "Once in ") + "\(Int(triggerIntervalDuration ?? 0.0)) seconds"
         }

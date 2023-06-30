@@ -60,7 +60,7 @@ struct NotificationDetailView: View {
                     ParameterView(parameterName: "Trigger Datetime:", parameterValue: givenNotification.triggerDatetime?.formatted() ?? "UNAVAILABLE")
                 }
                 
-                ParameterView(parameterName: "Created:", parameterValue: givenNotification.created.formatted())
+                ParameterView(parameterName: "Created:", parameterValue: givenNotification.created.formatted(date: .abbreviated, time: .standard))
             }
             .navigationTitle(givenNotification.title)
             .toolbar {
