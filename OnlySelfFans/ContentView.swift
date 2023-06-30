@@ -23,11 +23,26 @@ struct ContentViewListSectionHeader: View {
     }
 }
 
+struct NotificationCellView: View {
+    var notif: Notification
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(notif.title)
+                .bold()
+            Text(notif.description)
+                .font(.caption)
+        }
+        .padding(5)
+    }
+}
+
 struct ContentView: View {
     @StateObject var appManager: AppManager = AppManager()
     
     @State var showWelcomeScreen = false
     @State var showingNewNotificationScreen = false
+    @State var notifDetailIsActive = false
     
     var loadedNotifications: [Notification]? {
         appManager.loadedNotifications
@@ -42,14 +57,11 @@ struct ContentView: View {
                 if notificationStoredCurrently {
                     Section {
                         ForEach(loadedNotifications ?? [], id: \.id) { notif in
-                            VStack(alignment: .leading, spacing: 10) {
-                                Text(notif.title)
-                                    .bold()
-                                Text(notif.description)
-                                    .font(.caption)
+                            NavigationLink(destination: NotificationDetailView(appManager: appManager, detailIsShowing: $notifDetailIsActive, id: notif.id), isActive: $notifDetailIsActive) {
+                                NotificationCellView(notif: notif)
                             }
-                            .padding(5)
                         }
+                        .onDelete(perform: removeNotifs)
                     } header: {
                         ContentViewListSectionHeader(appManager: appManager)
                     }
@@ -100,10 +112,30 @@ struct ContentView: View {
     
     func makeFormattedDatetime(for notification: Notification) -> String? {
         if let triggerDatetime = notification.triggerDatetime {
-                return triggerDatetime.formatted()
+            return triggerDatetime.formatted()
         }
         
         return nil
+    }
+    
+    func removeNotifs(at offsets: IndexSet) {
+        let temp = appManager.loadedNotifications
+        appManager.loadedNotifications.remove(atOffsets: offsets)
+        Notification.saveToFile(notifications: appManager.loadedNotifications)
+        
+        // Get IDs of notifications that were removed
+        let remainingNotifIDs = appManager.loadedNotifications.map { $0.id }
+        let previousNotifIDs = temp.map { $0.id }
+        
+        var removedNotifIDs: [String] = []
+        for id in previousNotifIDs {
+            if !remainingNotifIDs.contains(id) {
+                removedNotifIDs.append(id)
+            }
+        }
+        
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: removedNotifIDs)
+//        appManager.refresh()
     }
 }
 
