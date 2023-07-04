@@ -28,9 +28,11 @@ struct ParameterView: View {
 }
 
 struct NotificationDetailView: View {
+    @Environment(\.dismiss) var dismiss
     @ObservedObject var appManager: AppManager
-    @Binding var detailIsShowing: Bool
     var id: String
+    
+    @State var showingReactivateConfirmationAlert = false
     
     var givenNotification: Notification? {
         appManager.loadedNotifications.first { $0.id == id }
@@ -61,6 +63,22 @@ struct NotificationDetailView: View {
                 }
                 
                 ParameterView(parameterName: "Created:", parameterValue: givenNotification.created.formatted(date: .abbreviated, time: .standard))
+                
+                // Re-activate button section
+                Section {
+                    Button {
+                        appManager.reActivateNotification(withID: givenNotification.id)
+                        showingReactivateConfirmationAlert = true
+                    } label: {
+                        Text("Re-activate")
+                            .fontWeight(.heavy)
+                            .foregroundColor(.accentColor)
+                            .padding()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                    .background(Color.accentColor.opacity(0.4))
+                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                }
             }
             .navigationTitle(givenNotification.title)
             .toolbar {
@@ -69,13 +87,19 @@ struct NotificationDetailView: View {
                         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [givenNotification.id])
                         appManager.loadedNotifications.removeAll { $0.id == givenNotification.id }
                         Notification.saveToFile(notifications: appManager.loadedNotifications)
-                        detailIsShowing = false
+                        dismiss()
                     } label: {
                         Text("Delete")
                             .foregroundColor(.red)
                     }
                 }
             }
+            .alert("Notification Re-activated", isPresented: $showingReactivateConfirmationAlert) {
+                Button("OK") {}
+            } message: {
+                Text("This notification has been re-activated successfully! It will now trigger as if it was just created.")
+            }
+
         } else {
             errorView
         }
@@ -84,6 +108,6 @@ struct NotificationDetailView: View {
 
 struct NotificationDetailView_Previews: PreviewProvider {
     static var previews: some View {
-        NotificationDetailView(appManager: AppManager(), detailIsShowing: .constant(true), id: "nil")
+        NotificationDetailView(appManager: AppManager(), id: "nil")
     }
 }

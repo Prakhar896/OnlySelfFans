@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ContentViewListSectionHeader: View {
     @ObservedObject var appManager: AppManager
+    @Binding var reloader: Bool
     
     var body: some View {
         HStack {
@@ -16,6 +17,7 @@ struct ContentViewListSectionHeader: View {
             Spacer()
             Button {
                 appManager.refresh()
+                reloader.toggle()
             } label: {
                 Image(systemName: "arrow.triangle.2.circlepath")
             }
@@ -40,6 +42,8 @@ struct NotificationCellView: View {
 struct ContentView: View {
     @StateObject var appManager: AppManager = AppManager()
     
+    @State var reloader: Bool = false
+    
     @State var showWelcomeScreen = false
     @State var showingNewNotificationScreen = false
     @State var notifDetailIsActive = false
@@ -57,13 +61,13 @@ struct ContentView: View {
                 if notificationStoredCurrently {
                     Section {
                         ForEach(loadedNotifications ?? [], id: \.id) { notif in
-                            NavigationLink(destination: NotificationDetailView(appManager: appManager, detailIsShowing: $notifDetailIsActive, id: notif.id), isActive: $notifDetailIsActive) {
+                            NavigationLink(destination: NotificationDetailView(appManager: appManager, id: notif.id)) {
                                 NotificationCellView(notif: notif)
                             }
                         }
                         .onDelete(perform: removeNotifs)
                     } header: {
-                        ContentViewListSectionHeader(appManager: appManager)
+                        ContentViewListSectionHeader(appManager: appManager, reloader: $reloader)
                     } footer: {
                         Text("Tip: Swipe left on a notification to delete it quickly.")
                     }
@@ -75,7 +79,7 @@ struct ContentView: View {
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .multilineTextAlignment(.center)
                     } header: {
-                        ContentViewListSectionHeader(appManager: appManager)
+                        ContentViewListSectionHeader(appManager: appManager, reloader: $reloader)
                     }
                 }
             }
