@@ -12,6 +12,13 @@ struct WelcomeView: View {
     
     var body: some View {
         VStack(alignment: .center) {
+            Image("OnlySelfFansIcon")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 150, height: 150)
+                .cornerRadius(10)
+                .shadow(radius: 5)
+            
             Text("OnlySelfFans")
                 .font(.largeTitle.weight(.heavy))
                 .padding(.bottom, 80)
