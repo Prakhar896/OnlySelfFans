@@ -113,6 +113,7 @@ struct ContentView: View {
             if AppManager.checkIfFirstLaunch() {
                 showWelcomeScreen.toggle()
             }
+            UNUserNotificationCenter.current().removeAllDeliveredNotifications()
         }
     }
     

@@ -62,7 +62,7 @@ class AppManager: ObservableObject {
     func reActivateNotification(withID notificationID: String) {
         if let targetNotif = loadedNotifications.first(where: { $0.id == notificationID}) {
             UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [notificationID])
-            AppManager.addNotification(withNotificationModel: targetNotif)
+            AppManager.addNotification(withNotificationModel: targetNotif, persist: false)
             let index = loadedNotifications.firstIndex(where: { $0.id == notificationID})!
             loadedNotifications[index].created = Date.now
             Notification.saveToFile(notifications: loadedNotifications)
@@ -82,7 +82,7 @@ class AppManager: ObservableObject {
         UserDefaults.standard.set(true, forKey: "LaunchedBefore")
     }
     
-    static func addNotification(withNotificationModel notification: Notification, _ persist: Bool = true) {
+    static func addNotification(withNotificationModel notification: Notification, persist: Bool = true) {
         let center = UNUserNotificationCenter.current()
         
         // create content
@@ -98,7 +98,7 @@ class AppManager: ObservableObject {
         if notification.timeIntervalBased {
             intervalBasedTrigger = UNTimeIntervalNotificationTrigger(timeInterval: notification.triggerIntervalDuration ?? 60, repeats: notification.repeats)
         } else {
-            var components = Calendar.current.dateComponents([.day, .month, .year, .hour, .minute], from: notification.triggerDatetime ?? Date.now)
+            let components = Calendar.current.dateComponents([.day, .month, .year, .hour, .minute], from: notification.triggerDatetime ?? Date.now)
             dateBasedTrigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: notification.repeats)
         }
         
