@@ -16,7 +16,7 @@ struct WelcomeView: View {
                 .font(.largeTitle.weight(.heavy))
                 .padding(.bottom, 80)
             
-            Text("OnlySelfFans is an app that allows you to customise notifications for yourself!\nYou can choose the title, body, time interval/date of notification and more!\n\nMight be when you need to interrupt your 4 hour long texting spree! ;)")
+            Text("OnlySelfFans is an app that allows you to customise notifications for yourself!\nYou can choose the title, body, time interval/date of notification and more!\n\nMight be useful when you need to interrupt your 4 hour long texting spree! ;)\n\nDeveloped with ❤️ by Prakhar Trivedi")
                 .padding(.bottom, 70)
                 .multilineTextAlignment(.center)
             

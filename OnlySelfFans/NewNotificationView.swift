@@ -23,6 +23,10 @@ struct NewNotificationView: View {
     @State var alertTitle = ""
     @State var alertMessage = ""
     
+    @FocusState var titleIsFocused: Bool
+    @FocusState var bodyIsFocused: Bool
+    @FocusState var intervalDurationIsFocused: Bool
+    
     let triggerModes = ["Interval", "Date and Time"]
     
     var body: some View {
@@ -30,6 +34,7 @@ struct NewNotificationView: View {
             Form {
                 Section {
                     TextField("Enter notification title", text: $title)
+                        .focused($titleIsFocused)
                 } header: {
                     Text("Title")
                 } footer: {
@@ -40,6 +45,7 @@ struct NewNotificationView: View {
                     TextField("Enter notification body", text: $bodyText, axis: .vertical)
                         .multilineTextAlignment(.leading)
                         .lineLimit(3, reservesSpace: true)
+                        .focused($bodyIsFocused)
                 } header: {
                     Text("Body")
                 } footer: {
@@ -64,6 +70,7 @@ struct NewNotificationView: View {
                             Text("Interval Duration")
                             TextField("e.g 300 seconds", value: $intervalDuration, format: .number)
                                 .multilineTextAlignment(.trailing)
+                                .focused($intervalDurationIsFocused)
                         }
                         
                         HStack {
@@ -110,8 +117,19 @@ struct NewNotificationView: View {
             } message: {
                 Text(alertMessage)
             }
-            
-            
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") {
+                        titleIsFocused = false
+                        bodyIsFocused = false
+                        intervalDurationIsFocused = false
+                    }
+                }
+            }
+            .onAppear {
+                titleIsFocused = true
+            }
         }
     }
     
