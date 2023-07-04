@@ -59,6 +59,17 @@ class AppManager: ObservableObject {
         exit(0)
     }
     
+    func reActivateNotification(withID notificationID: String) {
+        if let targetNotif = loadedNotifications.first(where: { $0.id == notificationID}) {
+            UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [notificationID])
+            AppManager.addNotification(withNotificationModel: targetNotif)
+            let index = loadedNotifications.firstIndex(where: { $0.id == notificationID})!
+            loadedNotifications[index].created = Date.now
+            Notification.saveToFile(notifications: loadedNotifications)
+//            refresh()
+        }
+    }
+    
     static func checkIfFirstLaunch() -> Bool {
         if UserDefaults.standard.bool(forKey: "LaunchedBefore") == true {
             return false
@@ -71,7 +82,7 @@ class AppManager: ObservableObject {
         UserDefaults.standard.set(true, forKey: "LaunchedBefore")
     }
     
-    static func addNotification(withNotificationModel notification: Notification) {
+    static func addNotification(withNotificationModel notification: Notification, _ persist: Bool = true) {
         let center = UNUserNotificationCenter.current()
         
         // create content
@@ -112,9 +123,11 @@ class AppManager: ObservableObject {
         }
         
         // persist notification
-        var loadedNotifs = Notification.loadFromFile() ?? []
-        loadedNotifs.insert(notification, at: 0)
-        Notification.saveToFile(notifications: loadedNotifs)
+        if persist {
+            var loadedNotifs = Notification.loadFromFile() ?? []
+            loadedNotifs.insert(notification, at: 0)
+            Notification.saveToFile(notifications: loadedNotifs)
+        }
     }
 }
 
